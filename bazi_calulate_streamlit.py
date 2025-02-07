@@ -450,7 +450,7 @@ with cols[1]:
     minute = st.number_input("Select minute", min_value=0, max_value=59, value=55, step=1)
 time_input = f"{hour:02d}:{minute:02d}"
 
-sex = st.radio("Select your gender:", ("Male", "Female"))
+sex = st.radio("Select your gender:", ("male", "female"))
 
 
 # st.write(formatted_date)
