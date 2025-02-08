@@ -4,8 +4,10 @@ import pandas as pd
 from collections import Counter
 
 import streamlit as st
+import json
+st.set_page_config(layout="wide")
 
-def AllBaziCalulate(date_input,time_input,sex):
+def AllBaziCalulate(date_input,time_inputs,sex):
     def get_heavenly_earthly_year(lunar_year):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar year. """
         stem_index = (lunar_year - 4) % 10
@@ -320,6 +322,11 @@ def AllBaziCalulate(date_input,time_input,sex):
             start_day = 9
         return start_day
 
+    if not time_inputs:
+        time_input = '12:00'
+    else:
+        time_input = time_inputs
+
     # 4 pillar and 10 gods
     stem_branch = get_stem_branch_for_date(date_input,time_input,dt)
     stem_branch = update_stem_branch_detail(stem_branch)
@@ -328,29 +335,49 @@ def AllBaziCalulate(date_input,time_input,sex):
     # luckpillar, 10 gods and age-ranges
     lp = find_luck_pillars(sex,stem_branch)
     start_age = lp[-1]
+
+    numbers = [start_age + i * 10 for i in range(9)]
+    ranges = [f"{numbers[i]}-{numbers[i+1]}" for i in range(len(numbers) - 1)]
+
+    ranges = [f"{numbers[i]}-{numbers[i+1]}" for i in range(len(numbers)-1)]
+    ranges.append(f"{numbers[-1]}-{numbers[-1] + (numbers[1] - numbers[0])}")
+    ranges.reverse()
+
+    # st.write('ranges',ranges)
+    # st.write('lp',lp[0])
+
+    
     lp = {
-        f'range_{8 - i}': {'stem': lp[0][i], 'branch': lp[1][i]} 
+        f'age_{ranges[i]}': {'stem': lp[0][i], 'branch': lp[1][i]} 
         for i in range(len(lp[0]))
     }
     lp = update_stem_branch_detail(lp)
     lp = update_lp_10g(lp)
-    lp['range_ages'] = numbers = [start_age + i * 10 for i in range(9)]
+    
 
     # percen_elements
     pe = find_percen_ele(stem_branch)
 
     input_data = {
         'date_input' : date_input,
-        'time_input' : time_input,
+        'time_input' : time_inputs,
         'sex' : sex
     }
+
+    luck_pillars_list = [
+    {"age": key.split("_")[1], **value}
+    for key, value in lp.items()
+    ]
 
     results = {
         'input_data' : input_data ,
         'four_pillars' : stem_branch,
-        'luck_pillars' : lp,
+        'luck_pillars' : luck_pillars_list,
         'percen_elements' : pe
     }
+
+    if not time_inputs:
+        results['four_pillars']['Hour'] = None
 
     return results
 
@@ -453,6 +480,12 @@ time_input = f"{hour:02d}:{minute:02d}"
 sex = st.radio("Select your gender:", ("male", "female"))
 
 
+checked = st.checkbox("Don't know born time")
+if checked:
+    time_input = None
+
+
+
 # st.write(formatted_date)
 # st.write(f"Formatted time: {formatted_time}")
 # st.write(gender)
@@ -481,6 +514,12 @@ dt = 0
 
 results  = AllBaziCalulate(date_input,time_input,sex)
 
-print('results:',results)
+# print('resultszxx:',results)
 
-st.write(results)
+cols = st.columns(2)
+cols[0].json(results)
+
+s = json.dumps(results,indent=4,ensure_ascii=False)
+cols[1].write(s)
+
+# print(s)st.erite
