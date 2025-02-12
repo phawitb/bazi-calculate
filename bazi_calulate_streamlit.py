@@ -132,12 +132,12 @@ def AllBaziCalulate(date_input,time_inputs,sex):
             luck_pillars_heavenly_stems = [heavenly_stems[(start_index + i) % len(heavenly_stems)] for i in range(10)]
             luck_pillars_earthly_branches = [earthly_branches[(start_branch_index + i) % len(earthly_branches)] for i in range(10)]
         
+            luck_pillars_heavenly_stems.reverse()
+            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[1:]
             # luck_pillars_heavenly_stems.reverse()
-            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
-            luck_pillars_heavenly_stems.reverse()
-            # luck_pillars_earthly_branches.reverse() 
-            luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
-            luck_pillars_heavenly_stems.reverse()
+            luck_pillars_earthly_branches.reverse() 
+            luck_pillars_earthly_branches = luck_pillars_earthly_branches[1:]
+            # luck_pillars_heavenly_stems.reverse()
 
         else:
             print('bw')
