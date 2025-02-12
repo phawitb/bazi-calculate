@@ -131,18 +131,28 @@ def AllBaziCalulate(date_input,time_inputs,sex):
             print('fw')
             luck_pillars_heavenly_stems = [heavenly_stems[(start_index + i) % len(heavenly_stems)] for i in range(10)]
             luck_pillars_earthly_branches = [earthly_branches[(start_branch_index + i) % len(earthly_branches)] for i in range(10)]
+        
+            # luck_pillars_heavenly_stems.reverse()
+            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
+            luck_pillars_heavenly_stems.reverse()
+            # luck_pillars_earthly_branches.reverse() 
+            luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
+            luck_pillars_heavenly_stems.reverse()
+
         else:
             print('bw')
             luck_pillars_heavenly_stems = [heavenly_stems[(start_index - i) % len(heavenly_stems)] for i in range(10)]
             luck_pillars_earthly_branches = [earthly_branches[(start_branch_index - i) % len(earthly_branches)] for i in range(10)]
 
-        luck_pillars_heavenly_stems.reverse()
-        luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
-        luck_pillars_earthly_branches.reverse() 
-        luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
+            luck_pillars_heavenly_stems.reverse()
+            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
+            luck_pillars_earthly_branches.reverse() 
+            luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
         
-        # find start day ---------
         start_day = find_start_day_lp(date_input,is_forward)
+
+        print('is_forward',is_forward)
+        print('luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day',luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day)
         
         return luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day
 
@@ -295,7 +305,8 @@ def AllBaziCalulate(date_input,time_inputs,sex):
 
         if is_fw: # b) If the Forward cycle is being used, then count the number of days between the person’s Day of Birth and the next monthly transition point.
             m_t = m + 1
-            if y == 12:
+            if m_t == 13:
+                m_t = 1
                 y += 1
 
             date_transition = find_transition_date(y,m_t)
@@ -308,15 +319,16 @@ def AllBaziCalulate(date_input,time_inputs,sex):
             else:
                 m_t = m - 1
 
-            if y == 1:
-                y = 12
+            if m_t == 0:
+                m_t = 12
+                y -= 1
 
             date_transition = find_transition_date(y,m_t)
             print('date_transition',date_transition)
             diff_day = find_diff_days(date_transition,date_input)
 
         print(diff_day)
-        start_day = int(diff_day/3)
+        start_day = int(diff_day/3)%10
         
         if start_day == 0:
             start_day = 9
