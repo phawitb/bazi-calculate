@@ -519,17 +519,19 @@ def Api3Calulate(current_date=str(date.today())):
         current_date = datetime.strptime(current_date, "%Y-%m-%d").date()
         results  = AllBaziCalulate(str(current_date),"12:00",'male')
         current_anual_energy = results['four_pillars']['Year']
+        current_anual_energy['year'] = current_date.year
         return current_anual_energy
 
     data = {}
     for i in range(5):
+        
+        current_anual_energy = find_year_energy(current_date)
+        data[f'current_anaual_energy_{i}'] = current_anual_energy
+
         # +1 year
         current_date = datetime.strptime(current_date, '%Y-%m-%d')
         current_date = current_date + timedelta(days=365)
         current_date = current_date.strftime('%Y-%m-%d')
-
-        current_anual_energy = find_year_energy(current_date)
-        data[f'current_anaual_energy_{i}'] = current_anual_energy
 
     # start api2
     
