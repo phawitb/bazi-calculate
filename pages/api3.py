@@ -12,11 +12,27 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         branch_index = (lunar_year - 4) % 12
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
-    def get_heavenly_earthly_month(lunar_year, lunar_month):
+    def get_heavenly_earthly_month(lunar_year, lunar_month, lunar_day):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar month. """
         branch_index = (lunar_month + 1) % 12  
         year_stem_index = (lunar_year - 4) % 10 
         stem_index = (year_stem_index * 2 + lunar_month) % 10 - 9
+
+
+        td = find_transition_date(int(date_input.split('-')[0]),int(date_input.split('-')[1]))
+
+        gregorian_date = datetime.strptime(td, "%Y-%m-%d")
+        gregorian_date = gregorian_date + timedelta(hours=dt)
+        td_lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
+
+        if td_lunar_date.day > 15 or td_lunar_date.isleap:
+            stem_index += 1
+            branch_index += 1
+            if stem_index > len(heavenly_stems) - 1:
+                stem_index = 0
+            if branch_index > len(earthly_branches) - 1:
+                branch_index = 0
+
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
     def get_heavenly_earthly_day(gregorian_date):
@@ -93,7 +109,7 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         
         lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
         year_stem, year_branch = get_heavenly_earthly_year(lunar_date.year)
-        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month)
+        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month, lunar_date.day)
         day_stem, day_branch = get_heavenly_earthly_day(gregorian_date)
         hour_stem, hour_branch = get_heavenly_earthly_hour(time_input,day_stem)
         
@@ -405,6 +421,175 @@ def find_transition_date(year,month):
 def list_month_energy(current_enery_year):
     months_energy = {}
     for m in range(1,13):
+        # td = find_transition_date(current_enery_year,m)
+
+        # # Convert string to year, month, day
+        # current_lunar_date = f'2025-{m}-01'
+
+        # lunar_year, lunar_month, lunar_day = map(int, current_lunar_date.split('-'))
+        # lunar_date = lunarcalendar.Lunar(lunar_year, lunar_month, lunar_day)
+        # solar_date = lunarcalendar.Converter.Lunar2Solar(lunar_date)
+        # solar_date_str = f"{solar_date.year}-{solar_date.month}-{solar_date.day}"
+        # print(solar_date_str)
+
+        solar_date_str = f"{current_enery_year}-{m}-15"
+
+        
+        # # shift transition date + 1 day
+        # date_obj = datetime.strptime(td, "%Y-%m-%d")
+        # new_date = date_obj + timedelta(days=1)
+        # td_plus = new_date.strftime("%Y-%m-%d")
+
+        results  = AllBaziCalulate(solar_date_str,"12:00",'male')
+        results['four_pillars'].pop('Hour')
+        for k in ['Year','Month','Day']:
+            for kk in ['stem_element','branch_animal','branch_element','hidden_stem','polarity','stem_10g','hidden_stem_10g','hidden_stem_element']:
+                results['four_pillars'][k].pop(kk)
+        # results['four_pillars']['Year'].pop('branch_animal')
+        # results['four_pillars']['Year'].pop('branch_element')
+        # results['four_pillars']['Year'].pop('hidden_stem')
+
+        results['four_pillars']['Date'] = solar_date_str
+        
+
+        months_energy[m] = results['four_pillars']
+        
+    return months_energy
+
+# --------
+# Earthly Branches data with elements and hidden elements
+earthly_data = {
+    "Earthly Branch": ["Zi (子)", "Chou (丑)", "Yin (寅)", "Mao (卯)", "Chen (辰)", 
+                        "Si (巳)", "Wu (午)", "Wei (未)", "Shen (申)", "You (酉)", 
+                        "Xu (戌)", "Hai (亥)"],
+    "Element": ["Water", "Earth", "Wood", "Wood", "Earth", 
+                     "Fire", "Fire", "Earth", "Metal", "Metal", 
+                     "Earth", "Water"],
+    "Hidden Elements": ["None", "Metal, Water", "Fire, Earth", "None", "Wood, Water",
+                         "Metal, Earth", "Earth", "Wood, Fire", "Water, Earth", "None",
+                         "Fire, Metal", "Wood"],
+    "Polarity": ["Yang", "Yin", "Yang", "Yin", "Yang",
+                 "Yin", "Yang", "Yin", "Yang", "Yin",
+                 "Yang", "Yin"],
+    "Animal": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", 
+                "Snake", "Horse", "Goat", "Monkey", "Rooster", 
+                "Dog", "Pig"]
+}
+
+# Heavenly Stems data with elements and polarity
+heavenly_data = {
+    "Heavenly Stem": ["Jia (甲)", "Yi (乙)", "Bing (丙)", "Ding (丁)", "Wu (戊)", 
+                       "Ji (己)", "Geng (庚)", "Xin (辛)", "Ren (壬)", "Gui (癸)"],
+    "Element": ["Wood", "Wood", "Fire", "Fire", "Earth", 
+                "Earth", "Metal", "Metal", "Water", "Water"],
+    "Polarity": ["Yang", "Yin", "Yang", "Yin", "Yang",
+                 "Yin", "Yang", "Yin", "Yang", "Yin"]
+}
+
+hidden_stems = {
+    'Zi (子)': ['Gui (癸)'],
+    'Chou (丑)': ['Ji (己)', 'Gui (癸)', 'Xin (辛)'],
+    'Yin (寅)': ['Jia (甲)', 'Bing (丙)', 'Wu (戊)'],
+    'Mao (卯)': ['Yi (乙)'],
+    'Chen (辰)': ['Wu (戊)', 'Yi (乙)', 'Gui (癸)'],
+    'Si (巳)': ['Bing (丙)', 'Wu (戊)', 'Geng (庚)'],
+    'Wu (午)': ['Ding (丁)', 'Ji (己)'],
+    'Wei (未)': ['Ji (己)', 'Ding (丁)', 'Yi (乙)'],
+    'Shen (申)': ['Geng (庚)', 'Ren (壬)', 'Wu (戊)'],
+    'You (酉)': ['Xin (辛)'],
+    'Xu (戌)': ['Wu (戊)', 'Xin (辛)', 'Ding (丁)'],
+    'Hai (亥)': ['Ren (壬)', 'Jia (甲)']
+}
+
+df_earthly = pd.DataFrame(earthly_data)
+df_heavenly = pd.DataFrame(heavenly_data)
+
+# df_element
+headers = ["Self Element", "Influence Element", "Wealth Element", "Resource Element", "Output Element", "Companion Element"]
+data = [
+    ["Wood", "Metal", "Earth", "Water", "Fire", "Wood"],
+    ["Water", "Earth", "Fire", "Metal", "Wood", "Water"],
+    ["Fire", "Water", "Metal", "Wood", "Earth", "Fire"],
+    ["Metal", "Fire", "Wood", "Earth", "Water", "Metal"],
+    ["Earth", "Wood", "Water", "Fire", "Metal", "Earth"]
+]
+df_element = pd.DataFrame(data, columns=headers)
+
+# df_variant
+headers = ["Element", "Yang Variant", "Yin Variant"]
+data = [
+    ["Wood", "Jia Wood", "Yi Wood"],
+    ["Fire", "Bing Fire", "Ding Fire"],
+    ["Earth", "Wu Earth", "Ji Earth"],
+    ["Metal", "Geng Metal", "Xin Metal"],
+    ["Water", "Ren Water", "Gui Water"]
+]
+df_variant = pd.DataFrame(data, columns=headers)
+
+five_factor_10gods = {
+    'Output Element' : ['EG','HO'],
+    'Wealth Element' : ['IW','DW'],
+    'Influence Element' : ['7K','DO'],
+    'Resource Element' : ['IR','DR'],
+    'Companion Element' : ['F','RW']
+}
+
+heavenly_stems = list(df_heavenly['Heavenly Stem'])
+earthly_branches = list(df_earthly['Earthly Branch'])
+reference_date = datetime(1900, 1, 31)  # 📌 1900-01-31 is Jia Chen (甲辰)
+dt = 0
+
+
+def Api2Calulate(current_date=str(date.today())):
+
+    # Convert to datetime object
+    current_date = datetime.strptime(current_date, "%Y-%m-%d").date()
+
+    # start api2
+    data = {}
+
+    # find current date
+    results  = AllBaziCalulate(str(current_date),"12:00",'male')
+    current_lunar_date = results['four_pillars']['LunarDate']
+    current_anual_energy = results['four_pillars']['Year']
+    data['current_date'] = str(current_date)
+    data['current_lunar_date'] = current_lunar_date
+
+    # find year energy
+    data['current_anual_energy'] = current_anual_energy
+    for kk in ['stem_element','branch_animal','branch_element','hidden_stem','polarity','stem_10g','hidden_stem_10g','hidden_stem_element']:
+        data['current_anual_energy'].pop(kk)
+
+
+    # find 12 months energy
+    if current_date > date(current_date.year, 2, 15):
+        current_year_ref = current_date.year
+        print("Current date is after February 15 of this year.",current_year_ref)
+    else:
+        current_year_ref = current_date.year - 1
+        print("Current date is on or before February 15 of this year.",current_year_ref)
+        
+    data['current_year_ref'] = current_year_ref
+
+    ly = list_month_energy(current_year_ref)
+    data['monthly_enery_of_current_year']  = ly
+
+    # print(data)
+    return data
+
+
+# -------
+def find_transition_date(year,month):
+    df = pd.read_csv("MonthChangeData.csv")
+    y_t,m_t,d_t = year,month,int(df[df['year']==year].iloc[0][f'month_{month}'])
+
+    date_str = f"{y_t}-{m_t}-{d_t}"
+    formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
+    return formatted_date
+
+def list_month_energy(current_enery_year):
+    months_energy = {}
+    for m in range(1,13):
         td = find_transition_date(current_enery_year,m)
 
         # Convert string to year, month, day
@@ -519,17 +704,22 @@ def Api3Calulate(current_date=str(date.today())):
         current_date = datetime.strptime(current_date, "%Y-%m-%d").date()
         results  = AllBaziCalulate(str(current_date),"12:00",'male')
         current_anual_energy = results['four_pillars']['Year']
-        current_anual_energy['year'] = current_date.year
+        # current_anual_energy['year'] = current_date.year
         return current_anual_energy
 
     data = {}
     for i in range(5):
-        
+
         current_anual_energy = find_year_energy(current_date)
-        data[f'current_anaual_energy_{i}'] = current_anual_energy
+        current_date = datetime.strptime(current_date, "%Y-%m-%d").date()
+        data[f'{current_date.year}'] = {
+            'stem' : current_anual_energy['stem'],
+            'branch' : current_anual_energy['branch']
+
+        }
 
         # +1 year
-        current_date = datetime.strptime(current_date, '%Y-%m-%d')
+        # current_date = datetime.strptime(current_date, '%Y-%m-%d')
         current_date = current_date + timedelta(days=365)
         current_date = current_date.strftime('%Y-%m-%d')
 
