@@ -406,13 +406,23 @@ def list_month_energy(current_enery_year):
     months_energy = {}
     for m in range(1,13):
         td = find_transition_date(current_enery_year,m)
-        
-        # shift transition date + 1 day
-        date_obj = datetime.strptime(td, "%Y-%m-%d")
-        new_date = date_obj + timedelta(days=1)
-        td_plus = new_date.strftime("%Y-%m-%d")
 
-        results  = AllBaziCalulate(td_plus,"12:00",'male')
+        # Convert string to year, month, day
+        current_lunar_date = f'2025-{m}-01'
+
+        lunar_year, lunar_month, lunar_day = map(int, current_lunar_date.split('-'))
+        lunar_date = lunarcalendar.Lunar(lunar_year, lunar_month, lunar_day)
+        solar_date = lunarcalendar.Converter.Lunar2Solar(lunar_date)
+        solar_date_str = f"{solar_date.year}-{solar_date.month}-{solar_date.day}"
+        print(solar_date_str)
+
+        
+        # # shift transition date + 1 day
+        # date_obj = datetime.strptime(td, "%Y-%m-%d")
+        # new_date = date_obj + timedelta(days=1)
+        # td_plus = new_date.strftime("%Y-%m-%d")
+
+        results  = AllBaziCalulate(solar_date_str,"12:00",'male')
 
         months_energy[m] = results['four_pillars']['Month']
         
