@@ -3,18 +3,34 @@ import lunarcalendar
 import pandas as pd
 from collections import Counter
 
-def AllBaziCalulate(date_input,time_input,sex):
+def AllBaziCalulate(date_input,time_inputs,sex):
     def get_heavenly_earthly_year(lunar_year):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar year. """
         stem_index = (lunar_year - 4) % 10
         branch_index = (lunar_year - 4) % 12
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
-    def get_heavenly_earthly_month(lunar_year, lunar_month):
+    def get_heavenly_earthly_month(lunar_year, lunar_month, lunar_day):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar month. """
         branch_index = (lunar_month + 1) % 12  
         year_stem_index = (lunar_year - 4) % 10 
         stem_index = (year_stem_index * 2 + lunar_month) % 10 - 9
+
+
+        td = find_transition_date(int(date_input.split('-')[0]),int(date_input.split('-')[1]))
+
+        gregorian_date = datetime.strptime(td, "%Y-%m-%d")
+        gregorian_date = gregorian_date + timedelta(hours=dt)
+        td_lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
+
+        if td_lunar_date.day > 15 or td_lunar_date.isleap:
+            stem_index += 1
+            branch_index += 1
+            if stem_index > len(heavenly_stems) - 1:
+                stem_index = 0
+            if branch_index > len(earthly_branches) - 1:
+                branch_index = 0
+
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
     def get_heavenly_earthly_day(gregorian_date):
@@ -91,7 +107,7 @@ def AllBaziCalulate(date_input,time_input,sex):
         
         lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
         year_stem, year_branch = get_heavenly_earthly_year(lunar_date.year)
-        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month)
+        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month, lunar_date.day)
         day_stem, day_branch = get_heavenly_earthly_day(gregorian_date)
         hour_stem, hour_branch = get_heavenly_earthly_hour(time_input,day_stem)
         
@@ -127,18 +143,28 @@ def AllBaziCalulate(date_input,time_input,sex):
             print('fw')
             luck_pillars_heavenly_stems = [heavenly_stems[(start_index + i) % len(heavenly_stems)] for i in range(10)]
             luck_pillars_earthly_branches = [earthly_branches[(start_branch_index + i) % len(earthly_branches)] for i in range(10)]
+        
+            luck_pillars_heavenly_stems.reverse()
+            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[1:]
+            # luck_pillars_heavenly_stems.reverse()
+            luck_pillars_earthly_branches.reverse() 
+            luck_pillars_earthly_branches = luck_pillars_earthly_branches[1:]
+            # luck_pillars_heavenly_stems.reverse()
+
         else:
             print('bw')
             luck_pillars_heavenly_stems = [heavenly_stems[(start_index - i) % len(heavenly_stems)] for i in range(10)]
             luck_pillars_earthly_branches = [earthly_branches[(start_branch_index - i) % len(earthly_branches)] for i in range(10)]
 
-        luck_pillars_heavenly_stems.reverse()
-        luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
-        luck_pillars_earthly_branches.reverse() 
-        luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
+            luck_pillars_heavenly_stems.reverse()
+            luck_pillars_heavenly_stems = luck_pillars_heavenly_stems[:-1]
+            luck_pillars_earthly_branches.reverse() 
+            luck_pillars_earthly_branches = luck_pillars_earthly_branches[:-1]
         
-        # find start day ---------
         start_day = find_start_day_lp(date_input,is_forward)
+
+        print('is_forward',is_forward)
+        print('luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day',luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day)
         
         return luck_pillars_heavenly_stems,luck_pillars_earthly_branches,start_day
 
@@ -291,7 +317,8 @@ def AllBaziCalulate(date_input,time_input,sex):
 
         if is_fw: # b) If the Forward cycle is being used, then count the number of days between the person’s Day of Birth and the next monthly transition point.
             m_t = m + 1
-            if y == 12:
+            if m_t == 13:
+                m_t = 1
                 y += 1
 
             date_transition = find_transition_date(y,m_t)
@@ -304,21 +331,28 @@ def AllBaziCalulate(date_input,time_input,sex):
             else:
                 m_t = m - 1
 
-            if y == 1:
-                y = 12
+            if m_t == 0:
+                m_t = 12
+                y -= 1
 
             date_transition = find_transition_date(y,m_t)
             print('date_transition',date_transition)
             diff_day = find_diff_days(date_transition,date_input)
 
         print(diff_day)
-        start_day = int(diff_day/3)
+        start_day = int(diff_day/3)%10
         
         if start_day == 0:
             start_day = 9
         return start_day
 
+    if not time_inputs:
+        time_input = '12:00'
+    else:
+        time_input = time_inputs
+
     # 4 pillar and 10 gods
+    dt = 0
     stem_branch = get_stem_branch_for_date(date_input,time_input,dt)
     stem_branch = update_stem_branch_detail(stem_branch)
     stem_branch = update_10g(stem_branch)
@@ -326,31 +360,52 @@ def AllBaziCalulate(date_input,time_input,sex):
     # luckpillar, 10 gods and age-ranges
     lp = find_luck_pillars(sex,stem_branch)
     start_age = lp[-1]
+
+    numbers = [start_age + i * 10 for i in range(9)]
+    ranges = [f"{numbers[i]}-{numbers[i+1]}" for i in range(len(numbers) - 1)]
+
+    ranges = [f"{numbers[i]}-{numbers[i+1]}" for i in range(len(numbers)-1)]
+    ranges.append(f"{numbers[-1]}-{numbers[-1] + (numbers[1] - numbers[0])}")
+    ranges.reverse()
+
+    # st.write('ranges',ranges)
+    # st.write('lp',lp[0])
+
+    
     lp = {
-        f'range_{8 - i}': {'stem': lp[0][i], 'branch': lp[1][i]} 
+        f'age_{ranges[i]}': {'stem': lp[0][i], 'branch': lp[1][i]} 
         for i in range(len(lp[0]))
     }
     lp = update_stem_branch_detail(lp)
     lp = update_lp_10g(lp)
-    lp['range_ages'] = numbers = [start_age + i * 10 for i in range(9)]
+    
 
     # percen_elements
     pe = find_percen_ele(stem_branch)
 
     input_data = {
         'date_input' : date_input,
-        'time_input' : time_input,
+        'time_input' : time_inputs,
         'sex' : sex
     }
+
+    luck_pillars_list = [
+    {"age": key.split("_")[1], **value}
+    for key, value in lp.items()
+    ]
 
     results = {
         'input_data' : input_data ,
         'four_pillars' : stem_branch,
-        'luck_pillars' : lp,
+        'luck_pillars' : luck_pillars_list,
         'percen_elements' : pe
     }
 
+    if not time_inputs:
+        results['four_pillars']['Hour'] = None
+
     return results
+
 
 # Earthly Branches data with elements and hidden elements
 earthly_data = {
