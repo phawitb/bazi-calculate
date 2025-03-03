@@ -100,11 +100,27 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         branch_index = (lunar_year - 4) % 12
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
-    def get_heavenly_earthly_month(lunar_year, lunar_month):
+    def get_heavenly_earthly_month(lunar_year, lunar_month, lunar_day):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar month. """
         branch_index = (lunar_month + 1) % 12  
         year_stem_index = (lunar_year - 4) % 10 
         stem_index = (year_stem_index * 2 + lunar_month) % 10 - 9
+
+
+        td = find_transition_date(int(date_input.split('-')[0]),int(date_input.split('-')[1]))
+
+        gregorian_date = datetime.strptime(td, "%Y-%m-%d")
+        gregorian_date = gregorian_date + timedelta(hours=dt)
+        td_lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
+
+        if td_lunar_date.day > 15 or td_lunar_date.isleap:
+            stem_index += 1
+            branch_index += 1
+            if stem_index > len(heavenly_stems) - 1:
+                stem_index = 0
+            if branch_index > len(earthly_branches) - 1:
+                branch_index = 0
+
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
     def get_heavenly_earthly_day(gregorian_date):
@@ -181,7 +197,7 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         
         lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
         year_stem, year_branch = get_heavenly_earthly_year(lunar_date.year)
-        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month)
+        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month, lunar_date.day)
         day_stem, day_branch = get_heavenly_earthly_day(gregorian_date)
         hour_stem, hour_branch = get_heavenly_earthly_hour(time_input,day_stem)
         
@@ -479,6 +495,7 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         results['four_pillars']['Hour'] = None
 
     return results
+
 
 @app.post("/calculate_bazi")
 def calculate_bazi(input_data: BaziInput):
