@@ -12,11 +12,27 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         branch_index = (lunar_year - 4) % 12
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
-    def get_heavenly_earthly_month(lunar_year, lunar_month):
+    def get_heavenly_earthly_month(lunar_year, lunar_month, lunar_day):
         """ Compute the Heavenly Stem and Earthly Branch for a given lunar month. """
         branch_index = (lunar_month + 1) % 12  
         year_stem_index = (lunar_year - 4) % 10 
         stem_index = (year_stem_index * 2 + lunar_month) % 10 - 9
+
+
+        td = find_transition_date(int(date_input.split('-')[0]),int(date_input.split('-')[1]))
+
+        gregorian_date = datetime.strptime(td, "%Y-%m-%d")
+        gregorian_date = gregorian_date + timedelta(hours=dt)
+        td_lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
+
+        if td_lunar_date.day > 15 or td_lunar_date.isleap:
+            stem_index += 1
+            branch_index += 1
+            if stem_index > len(heavenly_stems) - 1:
+                stem_index = 0
+            if branch_index > len(earthly_branches) - 1:
+                branch_index = 0
+
         return heavenly_stems[stem_index], earthly_branches[branch_index]
 
     def get_heavenly_earthly_day(gregorian_date):
@@ -93,7 +109,7 @@ def AllBaziCalulate(date_input,time_inputs,sex):
         
         lunar_date = lunarcalendar.Converter.Solar2Lunar(gregorian_date)
         year_stem, year_branch = get_heavenly_earthly_year(lunar_date.year)
-        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month)
+        month_stem, month_branch = get_heavenly_earthly_month(lunar_date.year, lunar_date.month, lunar_date.day)
         day_stem, day_branch = get_heavenly_earthly_day(gregorian_date)
         hour_stem, hour_branch = get_heavenly_earthly_hour(time_input,day_stem)
         
@@ -405,16 +421,18 @@ def find_transition_date(year,month):
 def list_month_energy(current_enery_year):
     months_energy = {}
     for m in range(1,13):
-        td = find_transition_date(current_enery_year,m)
+        # td = find_transition_date(current_enery_year,m)
 
-        # Convert string to year, month, day
-        current_lunar_date = f'2025-{m}-01'
+        # # Convert string to year, month, day
+        # current_lunar_date = f'2025-{m}-01'
 
-        lunar_year, lunar_month, lunar_day = map(int, current_lunar_date.split('-'))
-        lunar_date = lunarcalendar.Lunar(lunar_year, lunar_month, lunar_day)
-        solar_date = lunarcalendar.Converter.Lunar2Solar(lunar_date)
-        solar_date_str = f"{solar_date.year}-{solar_date.month}-{solar_date.day}"
-        print(solar_date_str)
+        # lunar_year, lunar_month, lunar_day = map(int, current_lunar_date.split('-'))
+        # lunar_date = lunarcalendar.Lunar(lunar_year, lunar_month, lunar_day)
+        # solar_date = lunarcalendar.Converter.Lunar2Solar(lunar_date)
+        # solar_date_str = f"{solar_date.year}-{solar_date.month}-{solar_date.day}"
+        # print(solar_date_str)
+
+        solar_date_str = f"{current_enery_year}-{m}-15"
 
         
         # # shift transition date + 1 day
@@ -423,8 +441,18 @@ def list_month_energy(current_enery_year):
         # td_plus = new_date.strftime("%Y-%m-%d")
 
         results  = AllBaziCalulate(solar_date_str,"12:00",'male')
+        results['four_pillars'].pop('Hour')
+        for k in ['Year','Month','Day']:
+            for kk in ['stem_element','branch_animal','branch_element','hidden_stem','polarity','stem_10g','hidden_stem_10g','hidden_stem_element']:
+                results['four_pillars'][k].pop(kk)
+        # results['four_pillars']['Year'].pop('branch_animal')
+        # results['four_pillars']['Year'].pop('branch_element')
+        # results['four_pillars']['Year'].pop('hidden_stem')
 
-        months_energy[m] = results['four_pillars']['Month']
+        results['four_pillars']['Date'] = solar_date_str
+        
+
+        months_energy[m] = results['four_pillars']
         
     return months_energy
 
@@ -529,6 +557,9 @@ def Api2Calulate(current_date=str(date.today())):
 
     # find year energy
     data['current_anual_energy'] = current_anual_energy
+    for kk in ['stem_element','branch_animal','branch_element','hidden_stem','polarity','stem_10g','hidden_stem_10g','hidden_stem_element']:
+        data['current_anual_energy'].pop(kk)
+
 
     # find 12 months energy
     if current_date > date(current_date.year, 2, 15):
