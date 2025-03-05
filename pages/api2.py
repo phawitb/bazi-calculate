@@ -452,7 +452,7 @@ def list_month_energy(current_enery_year):
         results['four_pillars']['Date'] = solar_date_str
         
 
-        months_energy[m] = results['four_pillars']
+        months_energy[m] = results['four_pillars']['Month']
         
     return months_energy
 
@@ -552,8 +552,8 @@ def Api2Calulate(current_date=str(date.today())):
     results  = AllBaziCalulate(str(current_date),"12:00",'male')
     current_lunar_date = results['four_pillars']['LunarDate']
     current_anual_energy = results['four_pillars']['Year']
-    data['current_date'] = str(current_date)
-    data['current_lunar_date'] = current_lunar_date
+    # data['current_date'] = str(current_date)
+    # data['current_lunar_date'] = current_lunar_date
 
     # find year energy
     data['current_anual_energy'] = current_anual_energy
